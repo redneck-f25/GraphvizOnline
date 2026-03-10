@@ -798,10 +798,24 @@
         updateState()
       }
 
+      let renderGraphImmediately = false;
       editor.setTheme("ace/theme/twilight");
       editor.getSession().setMode("ace/mode/dot");
-      editor.getSession().on("change", function () {
+      editor.getSession().setValueAndRenderGraphImmediately = (value) => {
+        renderGraphImmediately = true;
+        editor.getSession().setValue(value);
+      }
+      editor.getSession().on("change", function (delta) {
         clearTimeout(lastHD);
+        if (renderGraphImmediately) {
+          lastHD = -1;
+          // do not render after 'remove'
+          if (delta.action === 'insert') {
+            renderGraph();
+            renderGraphImmediately = false;
+          }
+          return;
+        }
         lastHD = setTimeout(renderGraph, 1500);
       });
 
@@ -858,11 +872,10 @@
       }
 
       if (params.has('raw')) {
-        editor.getSession().setValue(params.get('raw'));
-        renderGraph();
+        editor.getSession().setValueAndRenderGraphImmediately(params.get('raw'));
       } else if (params.has('compressed')) {
         const compressed = params.get('compressed');
-        editor.getSession().setValue(LZString.decompressFromEncodedURIComponent(compressed));
+        editor.getSession().setValueAndRenderGraphImmediately(LZString.decompressFromEncodedURIComponent(compressed));
       } else if (params.has('url')) {
         const url = params.get('url');
         let ok = false;
@@ -876,13 +889,12 @@
               throw { message: res };
             }
 
-            editor.getSession().setValue(res);
-            renderGraph();
+            editor.getSession().setValueAndRenderGraphImmediately(res);
           }).catch(e => {
             show_error(e);
           });
       } else if (location.hash.length > 1) {
-        editor.getSession().setValue(decodeURIComponent(location.hash.substring(1)));
+        editor.getSession().setValueAndRenderGraphImmediately(decodeURIComponent(location.hash.substring(1)));
       } else if (editor.getValue()) { // Init
         renderGraph();
       }
