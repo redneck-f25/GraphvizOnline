@@ -285,6 +285,7 @@
       top: 20px;
       left: 20px;
       margin-right: 20px;
+      padding: 0 1ex;
       background: red;
       color: white;
       z-index: 1;
@@ -584,6 +585,7 @@
 
       function show_error(e) {
         console.trace();
+        console.error(e);
         show_status("error", 500);
         reviewer.classList.remove("working");
         reviewer.classList.add("error");
