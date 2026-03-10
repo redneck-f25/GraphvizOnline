@@ -6,18 +6,22 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Graphviz Online</title>
   <style type="text/css" media="screen">
-    body {
-      overflow: hidden;
-      margin: 0 0;
+    :root {
+      --splitter-width: 5px;
+      --editor-width: calc(50% - var(--splitter-width));
     }
 
-    :root:not(.ready) body,
-    :root.presentation :is(#editor, #editor-toggle, #splitter) {
+    :root.hide-editor-toggle #editor-toggle {
       display: none;
     }
 
-    :root.presentation :is(#options, #review) {
-      left: 0;
+    :root:not(.ready) body {
+      display: none;
+    }
+
+    body {
+      overflow: hidden;
+      margin: 0 0;
     }
 
     #editor-toggle {
@@ -48,6 +52,17 @@
       width: 20px;
     }
 
+    #toggle-btn::before { content: "▶"; }
+    #toggle-btn::after { content: "◀"; }
+    #toggle-btn::before, #toggle-btn::after {
+      position: absolute;
+      transition: visibility 0.2s ease;
+    }
+    :root:not(.editor-collapsed) #toggle-btn::before,
+    :root.editor-collapsed #toggle-btn::after {
+      visibility: hidden;
+    }
+
     #toggle-btn:hover {
       background: rgba(255, 255, 255, 0.9);
       box-shadow: 2px 0 6px rgba(0,0,0,0.12);
@@ -59,14 +74,14 @@
       box-shadow: 1px 0 3px rgba(0,0,0,0.05);
     }
 
-    #toggle-btn.collapsed {
+    :root.editor-collapsed #toggle-btn {
       background: linear-gradient(to right, #ffffff, #f8f9fa);
       border: 1px solid #dee2e6;
       box-shadow: 2px 0 4px rgba(0,0,0,0.08);
       color: #495057;
     }
 
-    #toggle-btn.collapsed:hover {
+    :root.editor-collapsed #toggle-btn:hover {
       background: linear-gradient(to right, #f8f9fa, #e9ecef);
       color: #212529;
     }
@@ -78,10 +93,10 @@
       bottom: 0;
       left: 0;
       transition: width 0.3s ease;
-      width: 50%;
+      width: var(--editor-width);
     }
 
-    #editor.collapsed {
+    :root.editor-collapsed #editor {
       width: 0 !important;
       overflow: hidden;
     }
@@ -90,16 +105,22 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 50%;
-      width: 5px;
+      left: var(--editor-width);
+      width: var(--splitter-width);
       background: #ccc;
       cursor: col-resize;
       z-index: 5;
-      transition: left 0.3s ease;
+      transition: left 0.3s ease, visibility 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 2px 0 4px rgba(0,0,0,0.08);
+    }
+
+    :root.editor-collapsed #splitter {
+      visibility: hidden;
+      left: 0!important;
+      cursor: initial;
     }
 
     #splitter::before {
@@ -119,13 +140,20 @@
       color: #222;
     }
 
-    #splitter.dragging {
+    :root.splitter-is-dragging #splitter {
       background: #666;
+    }
+
+    :root.splitter-is-dragging :is(#splitter, #editor, #splitter, #review, #options) {
       transition: none;
     }
 
-    #splitter.dragging::before {
+    :root.splitter-is-dragging #splitter::before {
       color: #fff;
+    }
+
+    :root.splitter-is-dragging body {
+      cursor: col-resize;
     }
 
     #review {
@@ -134,19 +162,19 @@
       top: 42px;
       bottom: 0;
       right: 0;
-      left: calc(50% + 5px);
-      overflow: scroll;
+      left: calc(var(--editor-width) + var(--splitter-width));
+      /* overflow: scroll; */
       transition: left 0.3s ease;
     }
 
-    #review.expanded {
+    :root.editor-collapsed #review {
       left: 0 !important;
     }
 
     #options {
       margin: 0;
       position: fixed;
-      left: calc(50% + 5px);
+      left: calc(var(--editor-width) + var(--splitter-width));
       width: 100%;
       flex: 0 0 auto;
       background: linear-gradient(to bottom, #ffffff, #f8f9fa);
@@ -163,7 +191,7 @@
       z-index: 10;
     }
 
-    #options.expanded {
+    :root.editor-collapsed #options {
       left: 0 !important;
     }
 
@@ -336,7 +364,7 @@
 
 <body>
   <div id="editor-toggle">
-    <button id="toggle-btn">◀</button>
+    <button id="toggle-btn"></button>
   </div>
   <pre id="editor">digraph G {
 
@@ -428,127 +456,60 @@
   <script src="svg-pan-zoom.min.js" type="text/javascript" charset="utf-8"></script>
   <script>
     const editorElement = document.getElementById('editor');
-    const reviewElement = document.getElementById('review');
-    const optionsElement = document.getElementById('options');
     const toggleBtn = document.getElementById('toggle-btn');
     const splitter = document.getElementById('splitter');
 
-    let isCollapsed = false;
-    let isDragging = false;
-    let currentSplitPercentage = 50;
+    // Splitter drag and double-click functionality
 
-    // Splitter drag functionality
+    splitter.addEventListener('dblclick', (e) => {
+      document.documentElement.style.setProperty('--editor-width', `calc(50% - var(--splitter-width))`);
+    });
     splitter.addEventListener('mousedown', (e) => {
-      if (isCollapsed) return;
-      isDragging = true;
-      splitter.classList.add('dragging');
-      document.body.style.cursor = 'col-resize';
-      // Disable transitions during drag
-      editorElement.style.transition = 'none';
-      splitter.style.transition = 'none';
-      reviewElement.style.transition = 'none';
-      optionsElement.style.transition = 'none';
+      document.documentElement.classList.add('splitter-is-dragging');
+      document.addEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
+      document.addEventListener('mouseup', () => {
+        document.documentElement.classList.remove('splitter-is-dragging');
+        document.removeEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
+        resizeSVG();
+      }, { once: true });
       e.preventDefault();
     });
 
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
+    function handleMouseMoveWhileDraggingSplitter(e) {
       const windowWidth = window.innerWidth;
       const newLeft = e.clientX;
       const percentage = (newLeft / windowWidth) * 100;
-      
+
       // Limit the splitter to reasonable bounds (10% to 90%)
       if (percentage >= 10 && percentage <= 90) {
-        currentSplitPercentage = percentage;
-        updatePanelSizes(percentage);
-      }
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        splitter.classList.remove('dragging');
-        document.body.style.cursor = '';
-        // Re-enable transitions after drag
-        editorElement.style.transition = '';
-        splitter.style.transition = '';
-        reviewElement.style.transition = '';
-        optionsElement.style.transition = '';
-        setTimeout(resizeSVG, 100);
-      }
-    });
-
-    function updatePanelSizes(percentage) {
-      if (!isCollapsed) {
-        editorElement.style.width = `${percentage}%`;
-        splitter.style.left = `${percentage}%`;
-        reviewElement.style.left = `calc(${percentage}% + 5px)`;
-        optionsElement.style.left = `calc(${percentage}% + 5px)`;
+        document.documentElement.style.setProperty('--editor-width', `${percentage}%`);
+        resizeSVG({ throttle: 100 });
       }
     }
 
     toggleBtn.addEventListener('click', () => {
-      isCollapsed = !isCollapsed;
-
-      if (isCollapsed) {
-        // Enable transitions for smooth collapse
-        editorElement.style.transition = 'width 0.3s ease';
-        splitter.style.transition = 'left 0.3s ease, opacity 0.3s ease';
-        reviewElement.style.transition = 'left 0.3s ease';
-        optionsElement.style.transition = 'left 0.3s ease';
-        
-        editorElement.classList.add('collapsed');
-        reviewElement.classList.add('expanded');
-        optionsElement.classList.add('expanded');
-        toggleBtn.classList.add('collapsed');
-        splitter.style.opacity = '0';
-        splitter.style.left = '0';
-        toggleBtn.innerHTML = '▶';
-        
-        // Hide splitter after animation
-        setTimeout(() => {
-          splitter.style.display = 'none';
-        }, 300);
-      } else {
-        // Position splitter at left edge initially
-        splitter.style.left = '0';
-        splitter.style.opacity = '0';
-        splitter.style.display = 'flex';  // Use flex instead of block to keep dots centered
-        
-        // Enable transitions for smooth expand
-        editorElement.style.transition = 'width 0.3s ease';
-        splitter.style.transition = 'left 0.3s ease, opacity 0.3s ease';
-        reviewElement.style.transition = 'left 0.3s ease';
-        optionsElement.style.transition = 'left 0.3s ease';
-        
-        setTimeout(() => {
-          editorElement.classList.remove('collapsed');
-          reviewElement.classList.remove('expanded');
-          optionsElement.classList.remove('expanded');
-          toggleBtn.classList.remove('collapsed');
-          toggleBtn.innerHTML = '◀';
-          // Restore the split position
-          updatePanelSizes(currentSplitPercentage);
-          splitter.style.opacity = '1';
-        }, 10);
-      }
-
-      setTimeout(resizeSVG, 300);
+      document.documentElement.classList.toggle('editor-collapsed')
     });
 
-    window.addEventListener('resize', resizeSVG);
+    let resizeSVGTimer = null;
+    window.addEventListener('resize', resizeSVG.bind(null, { throttle: 100 }));
+    editorElement.addEventListener('transitionend', resizeSVG);
 
-    function resizeSVG() {
+    function resizeSVG({ throttle } = {}) {
+      if (throttle) {
+        if (resizeSVGTimer) { return; }
+        resizeSVGTimer = setTimeout(resizeSVG, 100);
+        return;
+      } else {
+        clearTimeout(resizeSVGTimer);
+      }
+      resizeSVGTimer = null;
       const svg = document.querySelector('#review svg');
       if (svg) {
         const panZoom = svgPanZoom(svg);
         panZoom.resize();
         panZoom.fit();
         panZoom.center();
-
-        svg.style.width = '100%';
-        svg.style.height = '100%';
       }
     }
 
@@ -571,6 +532,12 @@
         shareEl = document.querySelector("#share"),
         shareURLEl = document.querySelector("#shareurl"),
         errorEl = document.querySelector("#error");
+
+      // if the editor is initally hidden in presentation mode,
+      // we need to trigger a resize once
+      const boundEditorResize = editor.resize.bind(editor, true);
+      editorElement.addEventListener('transitionstart', boundEditorResize, { once: true });
+      editorElement.addEventListener('transitionend', boundEditorResize, { once: true });
 
       function show_status(text, hide) {
         hide = hide || 0;
@@ -864,11 +831,7 @@
       }
 
       if (params.has('presentation')) {
-        document.documentElement.classList.add('presentation');
-        for (const option of params.get('presentation').split(',')) {
-          document.documentElement.classList.add(`presentation-${option}`);
-        }
-
+        document.documentElement.classList.add('editor-collapsed', 'hide-editor-toggle');
       }
 
       if (params.has('raw')) {
