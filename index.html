@@ -9,12 +9,22 @@
     :root {
       --splitter-width: 5px;
       --editor-width: calc(50% - var(--splitter-width));
+      --review-top: 42px;
     }
-
+    :root.hide-github-fork-ribbon .github-fork-ribbon-wrapper {
+      display: none;
+    }
+    :root.hide-options:not(.show-engine,.show-format,.show-raw,.show-download,.show-share) {
+      --review-top: 0;
+    }
+    :root.hide-options:not(.show-engine,.show-format,.show-raw,.show-download,.show-share) #options,
+    :root.hide-options #options > *,
     :root.hide-editor-toggle #editor-toggle {
       display: none;
     }
-
+    :root.show-engine #engine, :root.show-format #format, :root.show-raw #raw, :root.show-download :has(>#download), :root.show-share :has(>#share) {
+      display: initial;
+    }
     :root:not(.ready) body {
       display: none;
     }
@@ -159,7 +169,7 @@
     #review {
       margin: 0;
       position: absolute;
-      top: 42px;
+      top: var(--review-top);
       bottom: 0;
       right: 0;
       left: calc(var(--editor-width) + var(--splitter-width));
@@ -599,6 +609,8 @@
         let content = encodeURIComponent(editor.getSession().getDocument().getValue());
         const longUrl = new URL(location.href);
         longUrl.hash = content;
+        // encode preserved commas from updateState()
+        longUrl.search = longUrl.searchParams.toString();
 
         shareEl.disabled = true;
         let n = 0;
@@ -618,7 +630,7 @@
           }).catch((err) => {
             const rawContent = editor.getSession().getDocument().getValue();
             const compressedContent = LZString.compressToEncodedURIComponent(rawContent);
-            
+
             const compressedUrl = new URL(location.href);
             compressedUrl.searchParams.append("compressed", compressedContent);
             compressedUrl.hash = "";
@@ -690,7 +702,9 @@
         const content = encodeURIComponent(editor.getSession().getDocument().getValue());
         updatedUrl.hash = content
         // Search params
-        updatedUrl.searchParams.set("engine", engineEl.value)
+        updatedUrl.searchParams.set("engine", engineEl.value);
+        // preserve commas in search params
+        updatedUrl.search = updatedUrl.searchParams.toString().replaceAll('%2C', ',');
         history.pushState({ "content": content, "engine": engineEl.value }, "", updatedUrl.toString())
       }
 
@@ -835,7 +849,20 @@
       }
 
       if (params.has('presentation')) {
-        document.documentElement.classList.add('editor-collapsed', 'hide-editor-toggle');
+        const classList = document.documentElement.classList;
+        classList.add('editor-collapsed', 'hide-editor-toggle');
+        const options = params.get('presentation').split(',');
+        if (options.indexOf('editable') !== -1) {
+          classList.remove('hide-editor-toggle');
+        }
+        if (options.indexOf('hide-options') !== -1) {
+          classList.add('hide-github-fork-ribbon');
+        }
+        for (const option of options) {
+          if (option.startsWith('show-') || option.startsWith('hide-')) {
+            classList.add(option);
+          }
+        }
       }
 
       if (params.has('raw')) {
