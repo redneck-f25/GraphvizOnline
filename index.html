@@ -833,6 +833,39 @@
         }
       };
 
+      (function initEditorStableWidthGutterRenderer() {
+        let numberOfLines;
+        let gutterChars;
+        let gutterWidth;
+        let gutterPad;
+        function ensureGutterPad(session) {
+          const n = session.doc.$lines.length;
+          if (n !== numberOfLines) {
+            numberOfLines = n;
+            gutterChars = String(n).length;
+            gutterPad = ' '.repeat(gutterChars < 3 ? 3 : gutterChars);
+            gutterWidth = undefined;
+          }
+        }
+        function ensureGutterWidth(session, config) {
+          ensureGutterPad(session);
+          if (gutterWidth === undefined) {
+            gutterWidth = gutterChars * config.characterWidth;
+          }
+          return gutterWidth;
+        }
+        editor.session.gutterRenderer = {
+          getText: function (session, row) {
+            ensureGutterPad(session);
+            return (gutterPad + row).slice(-gutterChars);
+          },
+          getWidth: function (session, lastLineNumber, config) {
+            ensureGutterWidth(session, config);
+            return gutterWidth;
+          },
+        };
+      }).call();
+
       formatEl.addEventListener("change", renderGraph);
       engineEl.addEventListener("change", renderGraph);
       rawEl.addEventListener("change", renderGraph);
