@@ -9,13 +9,9 @@
     :root {
       --splitter-width: 5px;
       --editor-width: calc(50% - var(--splitter-width));
-      --review-top: 42px;
     }
     :root.hide-github-fork-ribbon .github-fork-ribbon-wrapper {
       display: none;
-    }
-    :root.hide-options:not(.show-engine,.show-format,.show-raw,.show-download,.show-share) {
-      --review-top: 0;
     }
     :root.hide-options:not(.show-engine,.show-format,.show-raw,.show-download,.show-share) #options,
     :root.hide-options #options > *,
@@ -154,7 +150,7 @@
       background: #666;
     }
 
-    :root.splitter-is-dragging :is(#splitter, #editor, #splitter, #review, #options) {
+    :root.splitter-is-dragging :is(#splitter, #editor, :has(>#review)) {
       transition: none;
     }
 
@@ -166,26 +162,28 @@
       cursor: col-resize;
     }
 
-    #review {
-      margin: 0;
+    :has(>#review) {
+      display: flex;
+      flex-direction: column;
       position: absolute;
-      top: var(--review-top);
+      top: 0;
       bottom: 0;
       right: 0;
       left: calc(var(--editor-width) + var(--splitter-width));
-      /* overflow: scroll; */
       transition: left 0.3s ease;
     }
 
-    :root.editor-collapsed #review {
+    #review {
+      flex-grow: 1;
+      min-height: 1px;
+      position: relative;
+    }
+
+    :root.editor-collapsed :has(>#review) {
       left: 0 !important;
     }
 
     #options {
-      margin: 0;
-      position: fixed;
-      left: calc(var(--editor-width) + var(--splitter-width));
-      width: 100%;
       flex: 0 0 auto;
       background: linear-gradient(to bottom, #ffffff, #f8f9fa);
       border-bottom: 1px solid #dee2e6;
@@ -201,10 +199,6 @@
       z-index: 10;
     }
 
-    :root.editor-collapsed #options {
-      left: 0 !important;
-    }
-
     #options label {
       margin: 0;
       display: flex;
@@ -212,6 +206,7 @@
       gap: 6px;
       color: #495057;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     #options select {
@@ -280,9 +275,6 @@
     }
 
     #review svg {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
     }
@@ -404,52 +396,54 @@
   end [shape=Msquare];
 }</pre>
   <div id="splitter"></div>
-  <div id="options">
-    <label id="engine">
-      Engine:
-      <select>
-        <option>circo</option>
-        <option selected="">dot</option>
-        <option>fdp</option>
-        <option>nop</option>
-        <option>nop2</option>
-        <option>neato</option>
-        <option>sfdp</option>
-        <option>twopi</option>
-        <option>osage</option>
-        <option>patchwork</option>
-      </select>
-    </label>
+  <div>
+    <div id="options">
+      <label id="engine">
+        Engine:
+        <select>
+          <option>circo</option>
+          <option selected="">dot</option>
+          <option>fdp</option>
+          <option>nop</option>
+          <option>nop2</option>
+          <option>neato</option>
+          <option>sfdp</option>
+          <option>twopi</option>
+          <option>osage</option>
+          <option>patchwork</option>
+        </select>
+      </label>
 
-    <label id="format">
-      Format:
-      <select>
-        <option selected="">svg</option>
-        <option>png</option>
-        <option>json</option>
-        <option>xdot</option>
-        <option>plain</option>
-        <option>ps</option>
-      </select>
-    </label>
+      <label id="format">
+        Format:
+        <select>
+          <option selected="">svg</option>
+          <option>png</option>
+          <option>json</option>
+          <option>xdot</option>
+          <option>plain</option>
+          <option>ps</option>
+        </select>
+      </label>
 
-    <label id="raw" class="disabled">
-      <input type="checkbox" disabled=""> Show raw output
-    </label>
+      <label id="raw" class="disabled">
+        <input type="checkbox" disabled=""> Show raw output
+      </label>
 
-    <label>
-      <a href="#" target="_blank" id="download">Download</a>
-    </label>
+      <label>
+        <a href="#" target="_blank" id="download">Download</a>
+      </label>
 
-    <label>
-      <input type="button" value="Share" id="share">
-    </label>
+      <label>
+        <input type="button" value="Share" id="share">
+      </label>
 
-    <input type="input" value="" id="shareurl">
+      <input type="input" value="" id="shareurl">
 
-  </div>
-  <div id="review">
-    <div id="error"></div>
+    </div>
+    <div id="review">
+      <div id="error"></div>
+    </div>
   </div>
   <div id="status"></div>
   <div class="github-fork-ribbon-wrapper right">
