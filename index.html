@@ -460,6 +460,7 @@
   <script src="svg-pan-zoom.min.js" type="text/javascript" charset="utf-8"></script>
   <script>
     const editorElement = document.getElementById('editor');
+    const reviewElement = document.getElementById('review');
     const toggleBtn = document.getElementById('toggle-btn');
     const splitter = document.getElementById('splitter');
 
@@ -503,6 +504,13 @@
     window.addEventListener('resize', resizeSVG.bind(null, { throttle: 100 }));
     editorElement.addEventListener('transitionend', resizeSVG);
 
+    let prevReviewRect;
+    // a valid bounding client rect is available after <body> is rendered
+    // (i.e. document.documentElement.classList.contains('ready'))
+    setTimeout(() => {
+      prevReviewRect = reviewElement.getBoundingClientRect();
+    }, 0);
+
     function resizeSVG({ throttle } = {}) {
       if (throttle) {
         if (resizeSVGTimer) { return; }
@@ -514,10 +522,11 @@
       resizeSVGTimer = null;
       const svg = document.querySelector('#review svg');
       if (svg) {
-        const panZoom = svgPanZoom(svg);
-        panZoom.resize();
-        panZoom.fit();
-        panZoom.center();
+        const currRect = reviewElement.getBoundingClientRect();
+        const dw = currRect.width - prevReviewRect.width;
+        const dh = currRect.height - prevReviewRect.height;
+        svgPanZoom(svg).resize().panBy({ x: dw / 2, y: dh / 2 });
+        prevReviewRect = currRect;
       }
     }
 
