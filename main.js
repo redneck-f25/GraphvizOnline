@@ -11,6 +11,8 @@
 })(document.querySelector('#options > div:last-child > a:has(>svg)'));
 
 (function (document) {
+  const GraphvizOnline = globalThis.GraphvizOnline ?? (globalThis.GraphvizOnline = new EventTarget());
+
   const editorElement = document.getElementById('editor');
   const reviewElement = document.getElementById('review');
   const toggleBtn = document.getElementById('toggle-btn');
@@ -251,6 +253,10 @@
   }
 
   function updateState() {
+    const updateStateEvent = new Event('updateState', { cancelable: true } );
+    GraphvizOnline.dispatchEvent(updateStateEvent);
+    if (updateStateEvent.defaultPrevented) { return; }
+
     const updatedUrl = new URL(window.location)
     // Hash
     const content = encodeURIComponent(editor.getSession().getDocument().getValue());
@@ -263,6 +269,9 @@
   }
 
   function updateOutput(result) {
+    const updateOutputEvent = new CustomEvent('updateOutput', { detail: { result } } );
+    GraphvizOnline.dispatchEvent(updateOutputEvent);
+
     if (formatEl.value === "svg") {
       document.querySelector("#raw").classList.remove("disabled");
       rawEl.disabled = false;
@@ -465,6 +474,15 @@
 
     return -1;
   };
+
+  Object.assign(GraphvizOnline, {
+    editor,
+    reviewElement,
+    show_error,
+  });
+  const startupEvent = new Event('startup', { cancelable: true } );
+  GraphvizOnline.dispatchEvent(startupEvent);
+  if (startupEvent.defaultPrevented) { return; }
 
   /* parsing from URL sharing */
   const params = new URLSearchParams(location.search.substring(1));
