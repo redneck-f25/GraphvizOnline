@@ -1,3 +1,5 @@
+'use strict';
+
 (function adjustGithubRepositoryUrl(a) {
   if (!(a && location.host.match('^([^.]+)\.github\.io$'))) { return; }
   const ghuser = RegExp.$1;
@@ -8,78 +10,78 @@
   a.href = url.href;
 })(document.querySelector('#options > div:last-child > a:has(>svg)'));
 
-const editorElement = document.getElementById('editor');
-const reviewElement = document.getElementById('review');
-const toggleBtn = document.getElementById('toggle-btn');
-const splitter = document.getElementById('splitter');
-
-// Splitter drag and double-click functionality
-
-splitter.addEventListener('dblclick', (e) => {
-  document.documentElement.style.setProperty('--editor-width', `calc(50% - var(--splitter-width))`);
-});
-splitter.addEventListener('mousedown', (e) => {
-  document.documentElement.classList.add('splitter-is-dragging');
-  // overlay to prevent mouse pointer flickering when dragging the splitter to the left
-  const overlayElement = editorElement.appendChild(document.createElement('div'));
-  Object.assign(overlayElement.style, { position: 'absolute', inset: 0, zIndex: 10 });
-  document.addEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
-  document.addEventListener('mouseup', () => {
-    document.documentElement.classList.remove('splitter-is-dragging');
-    overlayElement.remove();
-    document.removeEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
-    resizeSVG();
-  }, { once: true });
-  e.preventDefault();
-});
-
-function handleMouseMoveWhileDraggingSplitter(e) {
-  const windowWidth = window.innerWidth;
-  const newLeft = e.clientX;
-  const percentage = (newLeft / windowWidth) * 100;
-
-  // Limit the splitter to reasonable bounds (10% to 90%)
-  if (percentage >= 10 && percentage <= 90) {
-    document.documentElement.style.setProperty('--editor-width', `${percentage}%`);
-    resizeSVG({ throttle: 100 });
-  }
-}
-
-toggleBtn.addEventListener('click', () => {
-  document.documentElement.classList.toggle('editor-collapsed')
-});
-
-let resizeSVGTimer = null;
-window.addEventListener('resize', resizeSVG.bind(null, { throttle: 100 }));
-editorElement.addEventListener('transitionend', resizeSVG);
-
-let prevReviewRect;
-// a valid bounding client rect is available after <body> is rendered
-// (i.e. document.documentElement.classList.contains('ready'))
-setTimeout(() => {
-  prevReviewRect = reviewElement.getBoundingClientRect();
-}, 0);
-
-function resizeSVG({ throttle } = {}) {
-  if (throttle) {
-    if (resizeSVGTimer) { return; }
-    resizeSVGTimer = setTimeout(resizeSVG, 100);
-    return;
-  } else {
-    clearTimeout(resizeSVGTimer);
-  }
-  resizeSVGTimer = null;
-  const svg = document.querySelector('#review svg');
-  if (svg) {
-    const currRect = reviewElement.getBoundingClientRect();
-    const dw = currRect.width - prevReviewRect.width;
-    const dh = currRect.height - prevReviewRect.height;
-    svgPanZoom(svg).resize().panBy({ x: dw / 2, y: dh / 2 });
-    prevReviewRect = currRect;
-  }
-}
-
 (function (document) {
+  const editorElement = document.getElementById('editor');
+  const reviewElement = document.getElementById('review');
+  const toggleBtn = document.getElementById('toggle-btn');
+  const splitter = document.getElementById('splitter');
+
+  // Splitter drag and double-click functionality
+
+  splitter.addEventListener('dblclick', (e) => {
+    document.documentElement.style.setProperty('--editor-width', `calc(50% - var(--splitter-width))`);
+  });
+  splitter.addEventListener('mousedown', (e) => {
+    document.documentElement.classList.add('splitter-is-dragging');
+    // overlay to prevent mouse pointer flickering when dragging the splitter to the left
+    const overlayElement = editorElement.appendChild(document.createElement('div'));
+    Object.assign(overlayElement.style, { position: 'absolute', inset: 0, zIndex: 10 });
+    document.addEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
+    document.addEventListener('mouseup', () => {
+      document.documentElement.classList.remove('splitter-is-dragging');
+      overlayElement.remove();
+      document.removeEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
+      resizeSVG();
+    }, { once: true });
+    e.preventDefault();
+  });
+
+  function handleMouseMoveWhileDraggingSplitter(e) {
+    const windowWidth = window.innerWidth;
+    const newLeft = e.clientX;
+    const percentage = (newLeft / windowWidth) * 100;
+
+    // Limit the splitter to reasonable bounds (10% to 90%)
+    if (percentage >= 10 && percentage <= 90) {
+      document.documentElement.style.setProperty('--editor-width', `${percentage}%`);
+      resizeSVG({ throttle: 100 });
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('editor-collapsed')
+  });
+
+  let resizeSVGTimer = null;
+  window.addEventListener('resize', resizeSVG.bind(null, { throttle: 100 }));
+  editorElement.addEventListener('transitionend', resizeSVG);
+
+  let prevReviewRect;
+  // a valid bounding client rect is available after <body> is rendered
+  // (i.e. document.documentElement.classList.contains('ready'))
+  setTimeout(() => {
+    prevReviewRect = reviewElement.getBoundingClientRect();
+  }, 0);
+
+  function resizeSVG({ throttle } = {}) {
+    if (throttle) {
+      if (resizeSVGTimer) { return; }
+      resizeSVGTimer = setTimeout(resizeSVG, 100);
+      return;
+    } else {
+      clearTimeout(resizeSVGTimer);
+    }
+    resizeSVGTimer = null;
+    const svg = document.querySelector('#review svg');
+    if (svg) {
+      const currRect = reviewElement.getBoundingClientRect();
+      const dw = currRect.width - prevReviewRect.width;
+      const dh = currRect.height - prevReviewRect.height;
+      svgPanZoom(svg).resize().panBy({ x: dw / 2, y: dh / 2 });
+      prevReviewRect = currRect;
+    }
+  }
+
   //http://stackoverflow.com/a/10372280/398634
   window.URL = window.URL || window.webkitURL;
   var el_stetus = document.getElementById("status"),
