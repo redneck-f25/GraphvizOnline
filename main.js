@@ -8,7 +8,7 @@
   pathSplit[1] = ghuser;
   url.pathname = pathSplit.join('/');
   a.href = url.href;
-})(document.querySelector('#options > div:last-child > a:has(>svg)'));
+})(document.querySelector('#github-link'));
 
 (function (document) {
   const GraphvizOnline = globalThis.GraphvizOnline ?? (globalThis.GraphvizOnline = new EventTarget());
