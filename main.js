@@ -13,7 +13,7 @@
 (function (document) {
   const GraphvizOnline = globalThis.GraphvizOnline ?? (globalThis.GraphvizOnline = new EventTarget());
 
-  const editorElement = document.getElementById('editor');
+  const editorPaneElement = document.getElementById('editor-pane');
   const reviewElement = document.getElementById('review');
   const toggleBtn = document.getElementById('toggle-btn');
   const splitter = document.getElementById('splitter');
@@ -26,7 +26,7 @@
   splitter.addEventListener('mousedown', (e) => {
     document.documentElement.classList.add('splitter-is-dragging');
     // overlay to prevent mouse pointer flickering when dragging the splitter to the left
-    const overlayElement = editorElement.appendChild(document.createElement('div'));
+    const overlayElement = editorPaneElement.appendChild(document.createElement('div'));
     Object.assign(overlayElement.style, { position: 'absolute', inset: 0, zIndex: 10 });
     document.addEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
     document.addEventListener('mouseup', () => {
@@ -56,7 +56,7 @@
 
   let resizeSVGTimer = null;
   window.addEventListener('resize', resizeSVG.bind(null, { throttle: 100 }));
-  editorElement.addEventListener('transitionend', resizeSVG);
+  editorPaneElement.addEventListener('transitionend', resizeSVG);
 
   let prevReviewRect;
   // a valid bounding client rect is available after <body> is rendered
@@ -106,8 +106,8 @@
   // if the editor is initally hidden in presentation mode,
   // we need to trigger a resize once
   const boundEditorResize = editor.resize.bind(editor, true);
-  editorElement.addEventListener('transitionstart', boundEditorResize, { once: true });
-  editorElement.addEventListener('transitionend', boundEditorResize, { once: true });
+  editorPaneElement.addEventListener('transitionstart', boundEditorResize, { once: true });
+  editorPaneElement.addEventListener('transitionend', boundEditorResize, { once: true });
 
   function show_status(text, hide) {
     hide = hide || 0;
