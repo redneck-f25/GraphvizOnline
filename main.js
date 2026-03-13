@@ -20,14 +20,17 @@
 
   // Splitter drag and double-click functionality
 
+  let screenOrientationPortrait;
   splitter.addEventListener('dblclick', (e) => {
-    document.documentElement.style.setProperty('--editor-width', `calc(50% - var(--splitter-width))`);
+    document.documentElement.style.removeProperty('--editor-proportion');
+    resizeSVG();
   });
   splitter.addEventListener('mousedown', (e) => {
     document.documentElement.classList.add('splitter-is-dragging');
     // overlay to prevent mouse pointer flickering when dragging the splitter to the left
     const overlayElement = editorPaneElement.appendChild(document.createElement('div'));
-    Object.assign(overlayElement.style, { position: 'absolute', inset: 0, zIndex: 10 });
+    Object.assign(overlayElement.style, { position: 'absolute', inset: 0, zIndex: 10, background: 'black', opacity: 0.2 });
+    screenOrientationPortrait = document.documentElement.classList.contains('orientation-portrait');
     document.addEventListener('mousemove', handleMouseMoveWhileDraggingSplitter);
     document.addEventListener('mouseup', () => {
       document.documentElement.classList.remove('splitter-is-dragging');
@@ -39,14 +42,21 @@
   });
 
   function handleMouseMoveWhileDraggingSplitter(e) {
-    const windowWidth = window.innerWidth;
-    const newLeft = e.clientX;
-    const percentage = (newLeft / windowWidth) * 100;
+    let percentage;
+    if (screenOrientationPortrait) {
+      const windowHeight = window.innerHeight;
+      const newBottom = e.clientY;
+      percentage = ((windowHeight - newBottom) / windowHeight) * 100;
+    } else {
+      const windowWidth = window.innerWidth;
+      const newLeft = e.clientX;
+      percentage = (newLeft / windowWidth) * 100;
+    }
 
     // Limit the splitter to reasonable bounds (10% to 90%)
     if (percentage >= 10 && percentage <= 90) {
-      document.documentElement.style.setProperty('--editor-width', `${percentage}%`);
-      resizeSVG({ throttle: 100 });
+      document.documentElement.style.setProperty('--editor-proportion', `${percentage}%`);
+      resizeSVG({ throttle: true });
     }
   }
 
@@ -55,8 +65,16 @@
   });
 
   let resizeSVGTimer = null;
-  window.addEventListener('resize', resizeSVG.bind(null, { throttle: 100 }));
+  window.addEventListener('resize', () => {
+    if (window.innerHeight > window.innerWidth) {
+      document.documentElement.classList.add('orientation-portrait');
+    } else {
+      document.documentElement.classList.remove('orientation-portrait');
+    }
+    resizeSVG({ throttle: true });
+  });
   editorPaneElement.addEventListener('transitionend', resizeSVG);
+  window.dispatchEvent(new Event('resize'));
 
   let prevReviewRect;
   // a valid bounding client rect is available after <body> is rendered
@@ -82,6 +100,7 @@
       svgPanZoom(svg).resize().panBy({ x: dw / 2, y: dh / 2 });
       prevReviewRect = currRect;
     }
+    editor.resize();
   }
 
   //http://stackoverflow.com/a/10372280/398634
