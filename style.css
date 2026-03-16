@@ -1,6 +1,6 @@
 :root {
   --splitter-width: 5px;
-  --editor-width: calc(50% - var(--splitter-width));
+  --editor-proportion: calc(50% - var(--splitter-width));
 }
 :root.hide-options:not(.show-engine,.show-format,.show-raw,.show-download,.show-share) #options,
 :root.hide-options #options > :not(div:last-child),
@@ -27,6 +27,14 @@ body {
   transform: translateY(-50%);
 }
 
+:root.orientation-portrait #editor-toggle {
+  top: unset;
+  bottom: 0;
+  left: 50%;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
 #toggle-btn {
   cursor: pointer;
   padding: 10px 6px;
@@ -47,8 +55,18 @@ body {
   width: 20px;
 }
 
+:root.orientation-portrait #toggle-btn {
+  padding: 6px 10px;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.08);
+  height: 20px;
+  width: 40px;
+}
+
 #toggle-btn::before { content: "▶"; }
 #toggle-btn::after { content: "◀"; }
+:root.orientation-portrait #toggle-btn::before { content: "▲"; }
+:root.orientation-portrait #toggle-btn::after { content: "▼"; }
 #toggle-btn::before, #toggle-btn::after {
   position: absolute;
   transition: visibility 0.2s ease;
@@ -85,11 +103,15 @@ body {
   display: flex;
   flex-direction: column;
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  transition: width 0.3s ease;
-  width: var(--editor-width);
+  inset: 0 auto 0 0;
+  width: var(--editor-proportion);
+  transition: all 0.3s ease;
+}
+
+:root.orientation-portrait #editor-pane {
+  inset: auto 0 0 0;
+  width: unset;
+  height: var(--editor-proportion);
 }
 
 #editor {
@@ -103,25 +125,40 @@ body {
   width: 0 !important;
 }
 
+:root.orientation-portrait.editor-collapsed #editor-pane {
+  width: unset!important;
+  height: 0 !important;
+}
+
 #splitter {
   position: absolute;
-  top: 0;
   bottom: 0;
-  left: var(--editor-width);
+  height: 100%;
+  left: var(--editor-proportion);
   width: var(--splitter-width);
   background: #ccc;
   cursor: col-resize;
   z-index: 5;
-  transition: left 0.3s ease, visibility 0.3s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 2px 0 4px rgba(0,0,0,0.08);
 }
 
+:root.orientation-portrait #splitter {
+  left: 0;
+  width: 100%;
+  bottom: var(--editor-proportion);
+  height: var(--splitter-width);
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.08);
+  cursor: row-resize;
+}
+
 :root.editor-collapsed #splitter {
   visibility: hidden;
   left: 0!important;
+  bottom: 0!important;
   cursor: initial;
 }
 
@@ -132,6 +169,10 @@ body {
   font-weight: bold;
   pointer-events: none;
   line-height: 1;
+}
+
+:root.orientation-portrait #splitter::before {
+  content: '⋯';
 }
 
 #splitter:hover {
@@ -158,15 +199,20 @@ body {
   cursor: col-resize;
 }
 
+:root.orientation-portrait.splitter-is-dragging body {
+  cursor: row-resize;
+}
+
 #review-pane {
   display: flex;
   flex-direction: column;
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  left: calc(var(--editor-width) + var(--splitter-width));
-  transition: left 0.3s ease;
+  inset: 0 0 0 calc(var(--editor-proportion) + var(--splitter-width));
+  transition: all 0.3s ease;
+}
+
+:root.orientation-portrait #review-pane {
+  inset: 0 0 calc(var(--editor-proportion) + var(--splitter-width)) 0;
 }
 
 #review {
@@ -185,7 +231,7 @@ body {
   border-bottom: 1px solid #dee2e6;
   padding: 8px 12px;
   overflow: hidden;
-  transition: left 0.3s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
@@ -271,6 +317,22 @@ body {
   vertical-align: middle;
   background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32px" height="32px" fill="black"><path d="M10.303 16.652c-2.837-.344-4.835-2.385-4.835-5.028 0-1.074.387-2.235 1.031-3.008-.279-.709-.236-2.214.086-2.837.86-.107 2.02.344 2.708.967.816-.258 1.676-.386 2.728-.386 1.053 0 1.913.128 2.686.365.666-.602 1.848-1.053 2.708-.946.3.581.344 2.085.064 2.815.688.817 1.053 1.913 1.053 3.03 0 2.643-1.998 4.641-4.877 5.006.73.473 1.224 1.504 1.224 2.686v2.235c0 .644.537 1.01 1.182.752 3.889-1.483 6.94-5.372 6.94-10.185 0-6.081-4.942-11.044-11.022-11.044-6.081 0-10.98 4.963-10.98 11.044a10.84 10.84 0 0 0 7.112 10.206c.58.215 1.139-.172 1.139-.752v-1.719a2.768 2.768 0 0 1-1.032.215c-1.418 0-2.256-.773-2.857-2.213-.237-.58-.495-.924-.989-.988-.258-.022-.344-.129-.344-.258 0-.258.43-.451.86-.451.623 0 1.16.386 1.719 1.181.43.623.881.903 1.418.903.537 0 .881-.194 1.375-.688.365-.365.645-.687.903-.902Z"></path></svg>');
 }
+
+#screen-orientation-btn {
+  display: inline-block;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  vertical-align: middle;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32" height="32" fill="black" style="vertical-align: text-bottom;"><path d="M32.97 5.03C39.5 8.13 44.19 14.48 44.9 22h3C46.88 9.68 36.58 0 24 0c-.45 0-.88.04-1.33.07L30.3 7.7l2.67-2.67zM20.46 3.49c-1.17-1.17-3.07-1.17-4.24 0L3.49 16.22c-1.17 1.17-1.17 3.07 0 4.24L27.53 44.5c1.17 1.17 3.07 1.17 4.24 0L44.5 31.77c1.17-1.17 1.17-3.07 0-4.24L20.46 3.49zm9.2 38.89L5.61 18.34 18.34 5.61l24.04 24.04-12.72 12.73zm-14.63.59C8.5 39.87 3.81 33.52 3.1 26h-3C1.12 38.32 11.42 48 24 48c.45 0 .88-.04 1.33-.07L17.7 40.3l-2.67 2.67z"/></svg>');
+  transform: rotate(90deg);
+  transition: all 0.3s ease;
+}
+
+:root.orientation-portrait #screen-orientation-btn {
+  transform: rotate(0deg);
+}
+
 
 #status {
   width: 100%;
