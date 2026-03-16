@@ -65,7 +65,18 @@
   });
 
   let resizeSVGTimer = null;
+  let prevOrientationPortrait = null;
   window.addEventListener('resize', () => {
+    const currOrientationPortrait = window.innerHeight > window.innerWidth;
+    if (prevOrientationPortrait !== currOrientationPortrait) {
+      if (prevOrientationPortrait !== null) {
+        document.documentElement.classList.remove('ready')
+        setTimeout(() => {
+          document.documentElement.classList.add('ready')
+        });
+      }
+      prevOrientationPortrait = currOrientationPortrait;
+    }
     if (window.innerHeight > window.innerWidth) {
       document.documentElement.classList.add('orientation-portrait');
     } else {
