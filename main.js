@@ -114,6 +114,17 @@
     editor.resize();
   }
 
+  document.getElementById('screen-orientation-btn').addEventListener('click', () => {
+    const classList = document.documentElement.classList;
+    classList.remove('ready');
+    setTimeout(() => { classList.add('ready'); });
+    if (classList.contains('orientation-portrait')) {
+      classList.remove('orientation-portrait');
+    } else {
+      classList.add('orientation-portrait');
+    }
+  });
+
   //http://stackoverflow.com/a/10372280/398634
   window.URL = window.URL || window.webkitURL;
   var el_stetus = document.getElementById("status"),
